@@ -1,22 +1,20 @@
 import React from 'react';
 
 
-const ListOfNumbers = ({constacts}) => {
+const ListOfNumbers = ({contact, onClick}) => {
     return (
-        <>
-            {
-                constacts.map((contact)=>{
-                    return(
-                        <li key={contact.id}>
-                            {`${contact.name}: ${contact.number}`}
-                        </li>
-                    )
-                      
-                    
-                })
-            }
-        </>
+
+            <li>
+                {`${contact.name}: ${contact.number}`}
+
+                <button 
+                    style={{marginLeft:"20px", backgroundColor:"red"  }}
+                    onClick={onClick}>
+                
+                delete</button>
+            </li>
+
     );
 };
 
-export default ListOfNumbers;
+export default ListOfNumbers

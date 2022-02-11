@@ -1,55 +1,81 @@
-import React, {  useState } from 'react'
-import './App.css';
+import React, {  useEffect, useState } from 'react'
+
 import ListOfNumbers from './components/ListOfNumbers';
 import Search from './components/Search';
-import initialState from './asset/peopleInformation';
 import Input from './components/Input';
+import setComunication from "../src/services/notes"
+import './App.css';
 
 function App() {
-
-  const [listName , setListname] = useState(initialState)
-
-  const [ name , setName] = useState ("");
-
-  const [ number, setNumber] = useState (0);
-  
+  const [listName , setListname] = useState([])
+  const [dinamicUsers , setDinamicUsers] = useState([])
   const [search, seatSearch] = useState("")
+  const [ name , setName] = useState ("");
+  const [ number, setNumber] = useState ("");
+  const [error, setError] = useState ("")
 
-  
+  useEffect(()=>{
+    setError("")
+   setComunication.getContactInformation().then((information)=>{
+      setListname(information);
+      setDinamicUsers(information)
+    })
+  .catch((err)=> {setError(err)})
+  }, [])
 
   const handleSubmit = (e)=> {
     e.preventDefault()
- 
-    
+    console.log(e.target.data);
     const newNumInList = {
-        id: listName.length + 1 ,
+        id: new Date(),
         name,
-        number
+        number,
     }
 
-    for(let n of listName){
-      if(n.name != newNumInList.name){
-        setListname (listName.concat(newNumInList))
-        setName("");
-        setNumber (0)
-      }else{
-        setName("");
-        setNumber (0)
-        return(
-          window.alert(`${newNumInList.name} alrready exist!`)
-        )
-         
-      }
-  }}
+   const findName = listName.find((n)=>n.name === name || n.number === number )
+    console.log(findName);
+
+   if(findName){
+    const itemChanged = {
+          ...findName,
+          name:name,
+          number:number
+    }
+
+    window.confirm("That name or number already exist, would you like to update it?")
+    ?
+    setComunication.updateContact(findName.id,itemChanged )
+
+    .then((infoResponse)=>{setListname(listName.map((item) => item.id !== findName.id? item: infoResponse))
+      setName("")
+      setNumber("")})
+    : 
+    console.log("new name");
+          setComunication.postNewCOntact(newNumInList)
+          .then(newContact =>{     
+                  setListname(listName.concat(newContact));
+                  setName("")
+                  setNumber("")   
+          }) 
+          .catch((err)=> console.log(err))
+      
+   }else{
+          console.log("new name");
+          setComunication.postNewCOntact(newNumInList)
+          .then(newContact =>{     
+                  setListname(listName.concat(newContact));
+                  setName("")
+                  setNumber("")   
+          }) 
+          .catch((err)=> console.log(err))  
+        }
+ }
 
   const handleName = (e) => {
       setName(e.target.value) 
-    }
-    
+    } 
 
-
-  const handleNumber = (e) => {
-   
+  const handleNumber = (e) => { 
     setNumber(e.target.value)
   }
 
@@ -58,10 +84,9 @@ function App() {
     filtrar(e.target.value)
   }
 
-  
-
+  //el dinamico sirve al estatico.
   const filtrar = (terminoBusqueda)=>{
-    let resultadosBusqueda= listName.filter((user)=>{
+    let resultadosBusqueda = dinamicUsers.filter((user)=>{
       if(user.name.toString().toLowerCase().includes(terminoBusqueda.toLowerCase())
       ){
         return user;
@@ -70,14 +95,18 @@ function App() {
     setListname(resultadosBusqueda);
   }
 
+const handleDelete = (id) =>{
+    setComunication
+    .deleteNote(id)  
+    const noteToDelete = listName.filter((n) => n.id !== id )
+    setListname(noteToDelete)
+}
 
- 
   return (
     <>
       <header style= {{display : "flex" , alignItems:"center"}}>
           <h2>Phonebook</h2>
           <Search search={search}  handleSearch={handleSearch}/>
-          
       </header>
       <form onSubmit={handleSubmit}>
 
@@ -98,19 +127,24 @@ function App() {
             <button type="submit">add</button>
           </div>
         </form>
-    
-        <section>
-          
+        <section>   
             <h2>Numbers</h2>
             <ul>
-              <ListOfNumbers constacts={listName} searchName={search} />
+            {
+              listName.map((contact)=>{
+               
+                return(
+                  <ListOfNumbers
+                      key={contact.id} 
+                      contact={contact}
+                      searchName={search}
+                      onClick={()=>window.confirm('Delete the item?')&&handleDelete(contact.id)} 
+                  />) })
+            }
             </ul>
-
+            <h3>{error}</h3>
         </section>
-
-      
     </>
-
   );
 }
 
